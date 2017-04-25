@@ -1,1 +1,38 @@
-{     "devDependencies": {         "electron-lite": "kaizhu256/node-electron-lite#alpha",         "utility2": "kaizhu256/node-utility2#alpha"     },     "name":"npmdoc-sails-hook-autoreload",     "homepage": "https://github.com/npmdoc/node-npmdoc-sails-hook-autoreload",     "repository": {         "type": "git",         "url": "https://github.com/npmdoc/node-npmdoc-sails-hook-autoreload.git"     },     "scripts": {         "build-ci": "utility2 shReadmeTest build_ci.sh"     },     "version": "0.0.1" }
+{
+    "author": "kai zhu <kaizhu256@gmail.com>",
+    "description": "#### basic api documentation for  [sails-hook-autoreload (v1.0.0)](https://github.com/sgress454/sails-hook-autoreload)  [![npm package](https://img.shields.io/npm/v/npmdoc-sails-hook-autoreload.svg?style=flat-square)](https://www.npmjs.org/package/npmdoc-sails-hook-autoreload) [![travis-ci.org build-status](https://api.travis-ci.org/npmdoc/node-npmdoc-sails-hook-autoreload.svg)](https://travis-ci.org/npmdoc/node-npmdoc-sails-hook-autoreload)",
+    "devDependencies": {
+        "electron-lite": "kaizhu256/node-electron-lite#alpha",
+        "utility2": "kaizhu256/node-utility2#alpha"
+    },
+    "engines": {
+        "node": ">=4.0"
+    },
+    "homepage": "https://github.com/npmdoc/node-npmdoc-sails-hook-autoreload",
+    "keywords": [
+        "documentation",
+        "sails-hook-autoreload"
+    ],
+    "license": "MIT",
+    "main": "lib.npmdoc_sails_hook_autoreload.js",
+    "name": "npmdoc-sails-hook-autoreload",
+    "nameAlias": "npmdoc_sails_hook_autoreload",
+    "nameOriginal": "npmdoc-sails-hook-autoreload",
+    "os": [
+        "darwin",
+        "linux"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/npmdoc/node-npmdoc-sails-hook-autoreload.git"
+    },
+    "scripts": {
+        "build-ci": "utility2 shReadmeTest build_ci.sh",
+        "env": "env",
+        "heroku-postbuild": "npm install \"kaizhu256/node-utility2#alpha\" && utility2 shDeployHeroku",
+        "postinstall": "[ ! -f npm_scripts.sh ] || ./npm_scripts.sh postinstall",
+        "start": "PORT=${PORT:-8080} utility2 start test.js",
+        "test": "(set -e; export PORT=$(utility2 shServerPortRandom); utility2 test test.js)"
+    },
+    "version": "0.0.1"
+}
