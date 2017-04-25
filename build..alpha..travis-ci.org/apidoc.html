@@ -1,0 +1,203 @@
+<div class="apidocDiv">
+<style>
+/*csslint
+*/
+.apidocDiv {
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.apidocDiv a[href] {
+    color: #33f;
+    font-weight: bold;
+    text-decoration: none;
+}
+.apidocDiv a[href]:hover {
+    text-decoration: underline;
+}
+.apidocCodeCommentSpan {
+    background: #bbf;
+    color: #000;
+    display: block;
+}
+.apidocCodeKeywordSpan {
+    color: #d00;
+    font-weight: bold;
+}
+.apidocCodePre {
+    background: #eef;
+    border: 1px solid;
+    color: #777;
+    padding: 5px;
+    white-space: pre-wrap;
+}
+.apidocFooterDiv {
+    margin-top: 20px;
+    text-align: center;
+}
+.apidocModuleLi {
+    margin-top: 10px;
+}
+.apidocSectionDiv {
+    border-top: 1px solid;
+    margin-top: 20px;
+}
+.apidocSignatureSpan {
+    color: #777;
+    font-weight: bold;
+}
+</style>
+<h1>api documentation for
+    <a
+
+        href="https://github.com/sgress454/sails-hook-autoreload"
+
+    >sails-hook-autoreload (v1.0.0)</a>
+</h1>
+<h4>Sails JS hook to autoreload controllers and models when changed.</h4>
+<div class="apidocSectionDiv"><a
+    href="#apidoc.tableOfContents"
+    id="apidoc.tableOfContents"
+><h1>table of contents</h1></a><ol>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.sails-hook-autoreload">module sails-hook-autoreload</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.sails-hook-autoreload.sails-hook-autoreload">
+            function <span class="apidocSignatureSpan"></span>sails-hook-autoreload
+            <span class="apidocSignatureSpan">(sails)</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+</ol></div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.sails-hook-autoreload" id="apidoc.module.sails-hook-autoreload">module sails-hook-autoreload</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.sails-hook-autoreload.sails-hook-autoreload" id="apidoc.element.sails-hook-autoreload.sails-hook-autoreload">
+        function <span class="apidocSignatureSpan"></span>sails-hook-autoreload
+        <span class="apidocSignatureSpan">(sails)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">sails-hook-autoreload = function (sails) {
+
+  return {
+
+<span class="apidocCodeCommentSpan">    /**
+     * Default configuration
+     *
+     * We do this in a function since the configuration key for
+     * the hook is itself configurable, so we can&#x27;t just return
+     * an object.
+     */
+</span>    defaults: {
+
+      __configKey__: {
+        //use polling to watch file changes
+        //slower but sometimes needed for VM environments
+        usePolling: false,
+        // Set dirs to watch
+        dirs: [
+          path.resolve(sails.config.appPath,&#x27;api&#x27;,&#x27;controllers&#x27;),
+          path.resolve(sails.config.appPath,&#x27;api&#x27;,&#x27;models&#x27;),
+          path.resolve(sails.config.appPath,&#x27;api&#x27;,&#x27;services&#x27;),
+          path.resolve(sails.config.appPath,&#x27;api&#x27;,&#x27;helpers&#x27;),
+          path.resolve(sails.config.appPath,&#x27;config&#x27;,&#x27;locales&#x27;),
+          path.resolve(sails.config.appPath,&#x27;config&#x27;,&#x27;routes.js&#x27;)
+        ],
+        overrideMigrateSetting: true,
+        // Ignored paths, passed to anymatch
+        // String to be directly matched, string with glob patterns,
+        // regular expression test, function
+        // or an array of any number and mix of these types
+        ignored: []
+      }
+    },
+
+    configure: function() {
+      sails.config[this.configKey].active =
+        // If an explicit value for the &#x22;active&#x22; config option is set, use it
+        (typeof sails.config[this.configKey].active !== &#x27;undefined&#x27;) ?
+          // Otherwise turn off in production environment, on for all others
+          sails.config[this.configKey].active :
+            (sails.config.environment != &#x27;production&#x27;);
+    },
+
+    /**
+     * Initialize the hook
+     * @param  {Function} cb Callback for when we&#x27;re done initializing
+     */
+    initialize: function(cb) {
+
+      var self = this;
+
+      var routesConfigPath = path.resolve(sails.config.appPath,&#x27;config&#x27;,&#x27;routes.js&#x27;);
+
+      // If the hook has been deactivated, or controllers is deactivated just return
+      if (!sails.config[this.configKey].active) {
+        sails.log.verbose(&#x22;sails-hook-autoreload: Autoreload hook deactivated.&#x22;);
+        return cb();
+      }
+
+      // Initialize the file watcher to watch controller and model dirs
+      var chokidar = require(&#x27;chokidar&#x27;);
+
+      // Watch both the controllers and models directories
+      var watcher = chokidar.watch(sails.config[this.configKey].dirs, {
+        // Ignore the initial &#x22;add&#x22; events which are generated when Chokidar
+        // starts watching files
+        ignoreInitial: true,
+        usePolling: sails.config[this.configKey].usePolling,
+        ignored: sails.config[this.configKey].ignored
+      });
+
+      sails.log.verbose(&#x22;sails-hook-autoreload: Autoreload watching: &#x22;, sails.config[this.configKey].dirs);
+
+      // Whenever something changes in those dirs, reload the ORM, controllers and blueprints.
+      // Debounce the event handler so that it only fires after receiving all of the change
+      // events.
+      watcher.on(&#x27;all&#x27;, _.debounce(function(action, watchedPath, stats) {
+
+        sails.log.verbose(&#x22;sails-hook-autoreload: Detected API change -- reloading controllers / models...&#x22;);
+
+        // Don&#x27;t use the configured migration strategy if `overrideMigrateSetting` is true.
+        sails.config.models.migrate = sails.config[self.configKey].overrideMigrateSetting ? &#x27;alter&#x27; : sails.config.models.migrate
+;
+
+        //  Reload controller middleware
+        sails.reloadActions(function() {
+
+          // Reload helpers
+          sails.hooks.helpers.reload(function() {
+
+            // Wait for the ORM to reload
+            sails.hooks.orm.reload(function() {
+
+              // Reload services
+              if (sails.hooks.services) {
+                sails.hooks.services.loadModules(function() {});
+              }
+
+              // Unset all of the current routes from the `explicitRoutes` hash.
+              // This hash may include some routes added by hooks, so can&#x27;t just wipe
+              // it entirely, but in case some route URLs changed we don&#x27;t want
+              // the old ones hanging around.
+              sails.router.explicitRoutes = _.omit(sails.router.explicitRoutes, function(action, address) { ...</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocFooterDiv">
+    [ this document was created with
+    <a href="https://github.com/kaizhu256/node-utility2" target="_blank">utility2</a>
+    ]
+</div>
+</div>
